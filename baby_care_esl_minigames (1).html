@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Take Care of the Baby!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+        .touch-none {
+            touch-action: none;
+        }
+        /* Custom Animations */
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 16px rgba(255, 215, 0, 0.9)); }
+        }
+        @keyframes bounceGentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes wobble {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            15% { transform: rotate(-14deg) scale(1.1); }
+            30% { transform: rotate(12deg) scale(1.1); }
+            45% { transform: rotate(-8deg) scale(1.05); }
+            60% { transform: rotate(6deg) scale(1.05); }
+            75% { transform: rotate(-3deg) scale(1.02); }
+        }
+
+        .animate-float { animation: floatSlow 3s ease-in-out infinite; }
+        .animate-pulse-glow { animation: pulseGlow 2s infinite; }
+        .animate-bounce-gentle { animation: bounceGentle 1.5s infinite; }
+        .animate-wobble { animation: wobble 0.6s ease-in-out; }
+
+        /* 3D Book Page Turning Effects */
+        .book-container {
+            perspective: 1000px;
+        }
+        .book-page {
+            transform-origin: left center;
+            transition: transform 0.5s cubic-bezier(0.645, 0.045, 0.355, 1), opacity 0.4s;
+            transform-style: preserve-3d;
+        }
+        .page-turning {
+            transform: rotateY(-140deg) scale(0.95);
+            opacity: 0;
+        }
+
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 h-screen w-screen flex flex-col items-center justify-between p-4 sm:p-6 text-slate-800">
+
+    <!-- 
+    ========================================================================
+    EXPECTED GRAPHICAL ASSETS (/images):
+    - /images/baby.png          : Happy awake baby illustration
+    - /images/baby_asleep.png   : Sleeping baby image
+    - /images/baby_crying.png   : Crying baby image
+    - /images/father_walk.png   : Dad holding baby walking sprite
+    - /images/bottle.png        : Milk bottle image
+    - /images/book_page1.png    : Storybook page 1
+    - /images/book_page2.png    : Storybook page 2
+    - /images/book_page3.png    : Storybook page 3
+    
+    EXPECTED SOUND ASSETS (/sound):
+    - /sound/happy_lullaby.mp3  : Peaceful winning melody
+    - /sound/baby_cry.mp3       : Crying sound effect
+    - /sound/page_turn.mp3      : Soft paper rustle sound
+    - /sound/rock.mp3          : Gentle cradle chime
+    - /sound/step.mp3          : Footstep sound
+    - /sound/note1.mp3         : C4 musical note
+    - /sound/note2.mp3         : E4 musical note
+    - /sound/note3.mp3         : G4 musical note
+    - /sound/slurp.mp3         : Milk drinking sound
+    
+    * Note: Automatic Web Audio API synthesizers and SVG fallback graphics
+      are active so the app functions 100% standalone without external assets!
+    ========================================================================
+    -->
+
+    <header class="w-full max-w-4xl flex flex-col items-center text-center z-10">
+        <!-- Target Task Banner -->
+        <div class="bg-white/90 backdrop-blur-md rounded-3xl p-4 sm:p-5 shadow-xl border-4 border-yellow-300 w-full mb-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl sm:text-4xl">🎯</span>
+                <div class="text-left">
+                    <p class="text-xs sm:text-sm font-bold text-indigo-500 uppercase tracking-wider">What does baby need?</p>
+                    <h1 id="target-phrase-text" class="text-2xl sm:text-4xl font-bold text-purple-700 tracking-wide">Loading...</h1>
+                </div>
+            </div>
+            <button id="speaker-btn" onclick="speakTargetPhrase()" class="bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg transition-all text-base sm:text-lg">
+                🔊 Listen
+            </button>
+        </div>
+
+        <!-- Central Baby Graphic Box with Wobble Effect -->
+        <div id="baby-avatar-wrapper" class="relative group cursor-pointer my-1 transition-transform" onclick="wobbleBaby()">
+            <div id="baby-circle" class="w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-yellow-100 border-8 border-white shadow-2xl flex items-center justify-center relative overflow-hidden animate-float">
+                <div id="baby-avatar-container" class="w-full h-full flex items-center justify-center">
+                    <!-- Dynamic Graphic Loaded Here -->
+                </div>
+            </div>
+            <div class="absolute -bottom-2 bg-yellow-400 text-yellow-950 font-bold px-4 py-1 rounded-full text-xs sm:text-sm shadow-md left-1/2 -translate-x-1/2">
+                Tap Me! 👶
+            </div>
+        </div>
+    </header>
+
+    <main id="game-container" class="w-full max-w-4xl flex-1 flex flex-col items-center justify-center relative my-2">
+        
+        <!-- PHASE 1: Action Selection Menu -->
+        <div id="selection-phase" class="w-full h-full flex flex-col items-center justify-center gap-3 sm:gap-4 p-2">
+            <h2 class="text-xl sm:text-2xl font-bold text-slate-700 text-center bg-white/70 px-6 py-2 rounded-full shadow-sm">
+                👇 Choose an action for the baby:
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 w-full max-w-3xl">
+                <button onclick="selectAction('read a book')" class="action-btn group bg-gradient-to-r from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 text-white rounded-3xl p-4 shadow-xl border-b-8 border-indigo-700 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 text-left">
+                    <span class="text-4xl group-hover:scale-125 transition-transform">📖</span>
+                    <div>
+                        <span class="block text-2xl font-bold">read a book</span>
+                        <span class="text-xs text-blue-100">Swipe to turn pages</span>
+                    </div>
+                </button>
+
+                <button onclick="selectAction('rock the baby')" class="action-btn group bg-gradient-to-r from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white rounded-3xl p-4 shadow-xl border-b-8 border-rose-700 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 text-left">
+                    <span class="text-4xl group-hover:scale-125 transition-transform">🌙</span>
+                    <div>
+                        <span class="block text-2xl font-bold">rock the baby</span>
+                        <span class="text-xs text-pink-100">Rock back & forth</span>
+                    </div>
+                </button>
+
+                <button onclick="selectAction('go for a walk')" class="action-btn group bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-3xl p-4 shadow-xl border-b-8 border-teal-700 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 text-left">
+                    <span class="text-4xl group-hover:scale-125 transition-transform">🚶‍♂️</span>
+                    <div>
+                        <span class="block text-2xl font-bold">go for a walk</span>
+                        <span class="text-xs text-emerald-100">Drag daddy along path</span>
+                    </div>
+                </button>
+
+                <button onclick="selectAction('sing a song')" class="action-btn group bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white rounded-3xl p-4 shadow-xl border-b-8 border-orange-700 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 text-left">
+                    <span class="text-4xl group-hover:scale-125 transition-transform">🎵</span>
+                    <div>
+                        <span class="block text-2xl font-bold">sing a song</span>
+                        <span class="text-xs text-amber-100">Tap 3 musical notes</span>
+                    </div>
+                </button>
+
+                <button onclick="selectAction('feed the baby')" class="action-btn group bg-gradient-to-r from-purple-400 to-fuchsia-500 hover:from-purple-500 hover:to-fuchsia-600 text-white rounded-3xl p-4 shadow-xl border-b-8 border-fuchsia-700 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 text-left sm:col-span-2 md:col-span-1">
+                    <span class="text-4xl group-hover:scale-125 transition-transform">🍼</span>
+                    <div>
+                        <span class="block text-2xl font-bold">feed the baby</span>
+                        <span class="text-xs text-purple-100">Drag bottle to baby</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- PHASE 2: Interactive Minigame Stage -->
+        <div id="challenge-phase" class="hidden w-full h-full bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border-4 border-white p-4 flex flex-col items-center justify-between relative overflow-hidden">
+            <div id="challenge-header" class="text-center mb-2">
+                <h3 id="challenge-title" class="text-2xl sm:text-3xl font-bold text-indigo-600">Challenge Title</h3>
+                <p id="challenge-instruction" class="text-base sm:text-lg text-slate-600 font-medium">Follow instructions!</p>
+            </div>
+
+            <!-- Minigame Canvas / Interactive Playground -->
+            <div id="challenge-stage" class="w-full flex-1 flex items-center justify-center relative touch-none">
+                <!-- Challenge UI dynamically generated here -->
+            </div>
+
+            <!-- Progress Meter -->
+            <div class="w-full max-w-md bg-gray-200 rounded-full h-4 mt-2 overflow-hidden border border-white shadow-inner">
+                <div id="challenge-progress-bar" class="bg-gradient-to-r from-green-400 to-emerald-500 h-full w-0 transition-all duration-300"></div>
+            </div>
+        </div>
+
+        <!-- PHASE 3: Outcome Display Overlay -->
+        <div id="outcome-phase" class="hidden absolute inset-0 bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl p-6 flex flex-col items-center justify-center text-center z-20">
+            <div id="outcome-graphic" class="w-36 h-36 mb-4 flex items-center justify-center">
+                <!-- Result Illustration -->
+            </div>
+            <h2 id="outcome-title" class="text-3xl sm:text-5xl font-extrabold mb-2">Outcome Title</h2>
+            <p id="outcome-desc" class="text-xl sm:text-2xl text-slate-600 mb-8 max-w-md font-semibold">Outcome description</p>
+            
+            <button onclick="resetGame()" class="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 active:scale-95 text-white text-2xl font-bold px-8 py-4 rounded-3xl shadow-xl border-b-8 border-green-800 transition-all flex items-center gap-3">
+                <span>🔄</span> Play Again!
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        const ACTIONS = [
+            'read a book',
+            'rock the baby',
+            'go for a walk',
+            'sing a song',
+            'feed the baby'
+        ];
+
+        let currentTargetPhrase = '';
+        let currentSelectedAction = '';
+        let challengeProgress = 0;
+
+        // Audio Synth Engine Context
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, type = 'sine', duration = 0.2) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.log('Audio playback waiting for interaction');
+            }
+        }
+
+        function playSoundEffect(type) {
+            initAudio();
+            if (type === 'page') playTone(450, 'triangle', 0.2);
+            else if (type === 'rock') playTone(220, 'sine', 0.3);
+            else if (type === 'step') playTone(300, 'sine', 0.1);
+            else if (type === 'giggle') playTone(587.33, 'sine', 0.15);
+            else if (type === 'note1') playTone(261.63, 'sine', 0.4);
+            else if (type === 'note2') playTone(329.63, 'sine', 0.4);
+            else if (type === 'note3') playTone(392.00, 'sine', 0.4);
+            else if (type === 'slurp') playTone(523.25, 'triangle', 0.25);
+            else if (type === 'win') {
+                [261.63, 329.63, 392.00, 523.25].forEach((freq, i) => {
+                    setTimeout(() => playTone(freq, 'sine', 0.3), i * 150);
+                });
+            } else if (type === 'cry') {
+                playTone(350, 'sawtooth', 0.3);
+                setTimeout(() => playTone(300, 'sawtooth', 0.4), 300);
+            }
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.85;
+                utterance.pitch = 1.15;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function speakTargetPhrase() {
+            speakText(currentTargetPhrase);
+        }
+
+        function wobbleBaby() {
+            const circle = document.getElementById('baby-circle');
+            if (!circle) return;
+            
+            circle.classList.remove('animate-wobble');
+            void circle.offsetWidth; // Reflow
+            circle.classList.add('animate-wobble');
+            
+            playSoundEffect('giggle');
+            speakText("Giggle! Baby!");
+        }
+
+        function getBabySVG(state = 'awake') {
+            if (state === 'awake') {
+                return `<svg viewBox="0 0 100 100" class="w-28 h-28">
+                    <circle cx="50" cy="50" r="42" fill="#FCE7F3" stroke="#F472B6" stroke-width="4"/>
+                    <circle cx="35" cy="42" r="5" fill="#374151"/>
+                    <circle cx="65" cy="42" r="5" fill="#374151"/>
+                    <circle cx="37" cy="40" r="2" fill="#FFF"/>
+                    <circle cx="67" cy="40" r="2" fill="#FFF"/>
+                    <circle cx="28" cy="52" r="6" fill="#F472B6" opacity="0.4"/>
+                    <circle cx="72" cy="52" r="6" fill="#F472B6" opacity="0.4"/>
+                    <path d="M 38 58 Q 50 70 62 58" fill="none" stroke="#E11D48" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M 50 8 Q 45 0 50 -4 Q 55 0 50 8" fill="#F59E0B"/>
+                </svg>`;
+            } else if (state === 'asleep') {
+                return `<svg viewBox="0 0 100 100" class="w-28 h-28">
+                    <circle cx="50" cy="50" r="42" fill="#FEF3C7" stroke="#F59E0B" stroke-width="4"/>
+                    <path d="M 28 45 Q 35 52 42 45" fill="none" stroke="#374151" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M 58 45 Q 65 52 72 45" fill="none" stroke="#374151" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="26" cy="52" r="6" fill="#F472B6" opacity="0.4"/>
+                    <circle cx="74" cy="52" r="6" fill="#F472B6" opacity="0.4"/>
+                    <circle cx="50" cy="60" r="4" fill="#E11D48"/>
+                    <text x="68" y="28" fill="#8B5CF6" font-size="16" font-weight="bold">z</text>
+                    <text x="78" y="18" fill="#8B5CF6" font-size="12" font-weight="bold">Z</text>
+                </svg>`;
+            } else if (state === 'crying') {
+                return `<svg viewBox="0 0 100 100" class="w-28 h-28">
+                    <circle cx="50" cy="50" r="42" fill="#E0F2FE" stroke="#38BDF8" stroke-width="4"/>
+                    <path d="M 28 38 L 40 46 L 28 54" fill="none" stroke="#0369A1" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M 72 38 L 60 46 L 72 54" fill="none" stroke="#0369A1" stroke-width="4" stroke-linecap="round"/>
+                    <ellipse cx="50" cy="64" rx="12" ry="10" fill="#BE123C"/>
+                    <path d="M 25 50 Q 20 60 25 68 Q 30 60 25 50" fill="#38BDF8"/>
+                    <path d="M 75 50 Q 80 60 75 68 Q 70 60 75 50" fill="#38BDF8"/>
+                </svg>`;
+            }
+        }
+
+        function setBabyGraphic(containerId, imgPath, svgState) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const img = new Image();
+            img.src = imgPath;
+            img.alt = svgState;
+            img.className = "w-28 h-28 sm:w-36 sm:h-36 object-contain";
+            
+            img.onload = function() {
+                container.appendChild(img);
+            };
+            img.onerror = function() {
+                container.innerHTML = getBabySVG(svgState);
+            };
+        }
+
+        function initGame() {
+            const randomIndex = Math.floor(Math.random() * ACTIONS.length);
+            currentTargetPhrase = ACTIONS[randomIndex];
+
+            document.getElementById('target-phrase-text').innerText = `"${currentTargetPhrase}"`;
+            
+            setBabyGraphic('baby-avatar-container', '/images/baby.png', 'awake');
+
+            document.getElementById('selection-phase').classList.remove('hidden');
+            document.getElementById('challenge-phase').classList.add('hidden');
+            document.getElementById('outcome-phase').classList.add('hidden');
+
+            speakText(`What does baby need? ${currentTargetPhrase}`);
+        }
+
+        function selectAction(action) {
+            currentSelectedAction = action;
+            initAudio();
+            speakText(action);
+
+            document.getElementById('selection-phase').classList.add('hidden');
+            document.getElementById('challenge-phase').classList.remove('hidden');
+
+            startChallenge(action);
+        }
+
+        function updateProgressBar(percentage) {
+            const bar = document.getElementById('challenge-progress-bar');
+            if (bar) bar.style.width = `${percentage}%`;
+        }
+
+        function completeChallenge() {
+            const isCorrect = (currentSelectedAction === currentTargetPhrase);
+            const outcomePhase = document.getElementById('outcome-phase');
+            const challengePhase = document.getElementById('challenge-phase');
+            const titleEl = document.getElementById('outcome-title');
+            const descEl = document.getElementById('outcome-desc');
+            
+            if (challengePhase) challengePhase.classList.add('hidden');
+            if (outcomePhase) outcomePhase.classList.remove('hidden');
+
+            if (isCorrect) {
+                if (titleEl) titleEl.innerText = "Good Job! 🎉";
+                if (descEl) descEl.innerText = "The baby is asleep!";
+                setBabyGraphic('outcome-graphic', '/images/baby_asleep.png', 'asleep');
+                playSoundEffect('win');
+                speakText("Good job! The baby is asleep!");
+            } else {
+                if (titleEl) titleEl.innerText = "Oh no! 😢";
+                if (descEl) descEl.innerText = "The baby is crying!";
+                setBabyGraphic('outcome-graphic', '/images/baby_crying.png', 'crying');
+                playSoundEffect('cry');
+                speakText("Oh no! The baby is crying!");
+            }
+        }
+
+        function startChallenge(action) {
+            challengeProgress = 0;
+            updateProgressBar(0);
+            const stage = document.getElementById('challenge-stage');
+            const title = document.getElementById('challenge-title');
+            const instruction = document.getElementById('challenge-instruction');
+
+            stage.innerHTML = '';
+
+            if (action === 'read a book') {
+                title.innerText = '📖 Read a Book';
+                instruction.innerText = '👈 Swipe left to turn pages!';
+                setupBookChallenge(stage);
+            } else if (action === 'rock the baby') {
+                title.innerText = '🌙 Rock the Baby';
+                instruction.innerText = 'Gently rock back and forth!';
+                setupRockChallenge(stage);
+            } else if (action === 'go for a walk') {
+                title.innerText = '🚶‍♂️ Go for a Walk';
+                instruction.innerText = 'Drag Daddy along the path!';
+                setupWalkChallenge(stage);
+            } else if (action === 'sing a song') {
+                title.innerText = '🎵 Sing a Song';
+                instruction.innerText = 'Tap all 3 notes in order!';
+                setupSingChallenge(stage);
+            } else if (action === 'feed the baby') {
+                title.innerText = '🍼 Feed the Baby';
+                instruction.innerText = 'Drag the bottle into baby\'s mouth!';
+                setupFeedChallenge(stage);
+            }
+        }
+
+        function setupBookChallenge(stage) {
+            let pageIndex = 1;
+            let startX = 0;
+            let isSwiping = false;
+
+            const pagesData = [
+                { emoji: '🐱', title: 'The Cute Cat', text: 'The cat says Meow!', bg: 'bg-amber-100', border: 'border-amber-400' },
+                { emoji: '🐶', title: 'The Happy Dog', text: 'The dog says Woof!', bg: 'bg-sky-100', border: 'border-sky-400' },
+                { emoji: '🌟', title: 'Nighty Night', text: 'Goodnight little star!', bg: 'bg-indigo-100', border: 'border-indigo-400' },
+                { emoji: '🎉', title: 'The End!', text: 'You finished the book!', bg: 'bg-emerald-100', border: 'border-emerald-400' }
+            ];
+
+            stage.innerHTML = `
+                <div class="book-container w-full max-w-sm h-72 flex items-center justify-center relative touch-none">
+                    <div id="book-spine" class="w-full h-full relative rounded-2xl shadow-2xl overflow-hidden border-8 border-amber-800 bg-amber-900 p-2 flex items-center justify-center">
+                        <div id="active-page" class="book-page w-full h-full rounded-xl ${pagesData[0].bg} border-4 ${pagesData[0].border} p-5 flex flex-col items-center justify-between text-center relative shadow-inner">
+                            <div class="w-full flex justify-between items-center text-xs font-bold text-slate-500">
+                                <span>📖 Storybook</span>
+                                <span>Page <span id="page-num">1</span>/3</span>
+                            </div>
+                            <div id="page-emoji" class="text-7xl my-2 animate-bounce-gentle">${pagesData[0].emoji}</div>
+                            <div>
+                                <h4 id="page-title" class="text-xl font-bold text-slate-800">${pagesData[0].title}</h4>
+                                <p id="page-text" class="text-base text-slate-600 font-semibold">${pagesData[0].text}</p>
+                            </div>
+                            <div class="text-sm font-bold text-indigo-500 animate-pulse flex items-center gap-1">
+                                <span>👈 Swipe Left to Turn</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const pageElement = document.getElementById('active-page');
+
+            const executePageTurn = () => {
+                if (isSwiping || pageIndex > 3) return;
+                isSwiping = true;
+                playSoundEffect('page');
+
+                if (pageElement) pageElement.classList.add('page-turning');
+
+                setTimeout(() => {
+                    const pageNumEl = document.getElementById('page-num');
+                    const pageEmojiEl = document.getElementById('page-emoji');
+                    const pageTitleEl = document.getElementById('page-title');
+                    const pageTextEl = document.getElementById('page-text');
+
+                    if (!pageNumEl || !pageElement) return;
+
+                    pageIndex++;
+                    const progress = Math.min(100, Math.round(((pageIndex - 1) / 3) * 100));
+                    updateProgressBar(progress);
+
+                    if (pageIndex > 3) {
+                        const finalData = pagesData[3];
+                        if (pageNumEl) pageNumEl.innerText = '3';
+                        if (pageEmojiEl) pageEmojiEl.innerText = finalData.emoji;
+                        if (pageTitleEl) pageTitleEl.innerText = finalData.title;
+                        if (pageTextEl) pageTextEl.innerText = finalData.text;
+                        pageElement.className = `book-page w-full h-full rounded-xl ${finalData.bg} border-4 ${finalData.border} p-5 flex flex-col items-center justify-between text-center relative shadow-inner`;
+                        pageElement.classList.remove('page-turning');
+                        
+                        setTimeout(completeChallenge, 700);
+                    } else {
+                        const nextData = pagesData[pageIndex - 1];
+                        if (pageNumEl) pageNumEl.innerText = pageIndex;
+                        if (pageEmojiEl) pageEmojiEl.innerText = nextData.emoji;
+                        if (pageTitleEl) pageTitleEl.innerText = nextData.title;
+                        if (pageTextEl) pageTextEl.innerText = nextData.text;
+                        
+                        pageElement.className = `book-page w-full h-full rounded-xl ${nextData.bg} border-4 ${nextData.border} p-5 flex flex-col items-center justify-between text-center relative shadow-inner`;
+                        pageElement.classList.remove('page-turning');
+                        isSwiping = false;
+                    }
+                }, 400);
+            };
+
+            const handleStart = (x) => { startX = x; };
+            const handleEnd = (endX) => {
+                const deltaX = startX - endX;
+                if (deltaX > 35) {
+                    executePageTurn();
+                }
+            };
+
+            stage.onpointerdown = (e) => handleStart(e.clientX);
+            stage.onpointerup = (e) => handleEnd(e.clientX);
+        }
+
+        function setupRockChallenge(stage) {
+            let rocksCount = 0;
+            const targetRocks = 5;
+            let lastX = null;
+            let direction = null;
+
+            stage.innerHTML = `
+                <div class="flex flex-col items-center justify-center w-full h-full">
+                    <div id="cradle" class="text-8xl transition-transform duration-200 cursor-grab active:cursor-grabbing transform origin-bottom">
+                        👶🍼
+                    </div>
+                    <p class="mt-6 text-base sm:text-lg font-bold text-pink-500 bg-pink-100 px-6 py-2 rounded-full animate-pulse">
+                        👈 Move finger left and right 👉
+                    </p>
+                </div>
+            `;
+
+            const cradle = document.getElementById('cradle');
+
+            const handleMove = (clientX) => {
+                if (!cradle) return;
+                if (lastX === null) {
+                    lastX = clientX;
+                    return;
+                }
+
+                const deltaX = clientX - lastX;
+                if (Math.abs(deltaX) > 20) {
+                    const newDir = deltaX > 0 ? 'right' : 'left';
+                    if (direction && direction !== newDir) {
+                        rocksCount++;
+                        playSoundEffect('rock');
+                        cradle.style.transform = newDir === 'right' ? 'rotate(18deg)' : 'rotate(-18deg)';
+                        
+                        updateProgressBar((rocksCount / targetRocks) * 100);
+
+                        if (rocksCount >= targetRocks) {
+                            setTimeout(completeChallenge, 400);
+                        }
+                    }
+                    direction = newDir;
+                    lastX = clientX;
+                }
+            };
+
+            stage.onpointermove = (e) => handleMove(e.clientX);
+        }
+
+        function setupWalkChallenge(stage) {
+            stage.innerHTML = `
+                <div id="walk-container" class="w-full h-64 bg-emerald-100 border-4 border-emerald-300 rounded-2xl relative overflow-hidden flex items-center px-4 touch-none select-none">
+                    <div class="w-full h-2 border-b-4 border-dashed border-emerald-500 absolute top-1/2 left-0 -translate-y-1/2"></div>
+                    <div id="walk-destination" class="absolute right-4 top-1/2 -translate-y-1/2 text-5xl sm:text-6xl p-2 bg-emerald-200/60 rounded-2xl border-2 border-emerald-400 select-none">
+                        🌳🏡
+                    </div>
+                    <div id="dad-sprite" class="absolute left-2 top-1/2 -translate-y-1/2 text-6xl sm:text-7xl cursor-grab active:cursor-grabbing touch-none transition-transform z-10 select-none">
+                        👨‍🍼
+                    </div>
+                </div>
+            `;
+
+            const dad = document.getElementById('dad-sprite');
+            const destination = document.getElementById('walk-destination');
+            let isDragging = false;
+            let finished = false;
+
+            const checkWalkCollision = () => {
+                if (finished || !dad || !destination) return;
+                const dadRect = dad.getBoundingClientRect();
+                const destRect = destination.getBoundingClientRect();
+                const stageRect = stage.getBoundingClientRect();
+
+                const startX = stageRect.left + 10;
+                const totalDist = Math.max(1, destRect.left - startX);
+                const currentDist = dadRect.left - startX;
+                const progress = Math.min(100, Math.max(0, (currentDist / totalDist) * 100));
+                updateProgressBar(progress);
+
+                const isColliding = !(
+                    dadRect.right < destRect.left + 10 ||
+                    dadRect.left > destRect.right - 10 ||
+                    dadRect.bottom < destRect.top + 10 ||
+                    dadRect.top > destRect.bottom - 10
+                );
+
+                if (isColliding) {
+                    finished = true;
+                    isDragging = false;
+                    updateProgressBar(100);
+                    playSoundEffect('win');
+                    setTimeout(completeChallenge, 500);
+                }
+            };
+
+            const moveDadTo = (clientX) => {
+                if (finished || !dad) return;
+                const stageRect = stage.getBoundingClientRect();
+                const containerWidth = stageRect.width - 80;
+                let x = clientX - stageRect.left - 30;
+                if (x < 10) x = 10;
+                if (x > containerWidth) x = containerWidth;
+
+                dad.style.left = `${x}px`;
+                playSoundEffect('step');
+                checkWalkCollision();
+            };
+
+            const onStart = (e) => {
+                if (finished) return;
+                isDragging = true;
+                if (dad && e.pointerId && dad.setPointerCapture) {
+                    try { dad.setPointerCapture(e.pointerId); } catch(err) {}
+                }
+            };
+
+            const onEnd = () => {
+                isDragging = false;
+            };
+
+            const onMove = (e) => {
+                if (!isDragging || finished) return;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                moveDadTo(clientX);
+            };
+
+            if (dad) {
+                dad.addEventListener('pointerdown', onStart);
+                dad.addEventListener('pointerup', onEnd);
+                dad.addEventListener('pointercancel', onEnd);
+                dad.addEventListener('pointermove', onMove);
+
+                dad.addEventListener('touchstart', (e) => { onStart(e); e.preventDefault(); }, { passive: false });
+                dad.addEventListener('touchend', onEnd);
+                dad.addEventListener('touchcancel', onEnd);
+                dad.addEventListener('touchmove', (e) => {
+                    if (!isDragging || finished) return;
+                    if (e.touches && e.touches[0]) {
+                        moveDadTo(e.touches[0].clientX);
+                    }
+                    e.preventDefault();
+                }, { passive: false });
+            }
+        }
+
+        function setupSingChallenge(stage) {
+            let noteStep = 0;
+            const totalNotes = 3;
+
+            stage.innerHTML = `
+                <div class="flex flex-col items-center justify-center gap-6">
+                    <p id="sing-prompt" class="text-xl font-bold text-amber-700 bg-amber-100 px-6 py-2 rounded-full shadow-sm">
+                        Tap Note 1! 🎵
+                    </p>
+                    <div class="flex items-center gap-4">
+                        <button id="note-1" onclick="tapNote(1)" class="w-20 h-20 rounded-full bg-red-400 border-4 border-red-600 text-white font-extrabold text-2xl shadow-xl active:scale-95 transition-transform flex items-center justify-center animate-pulse-glow">
+                            🔴 1
+                        </button>
+                        <button id="note-2" onclick="tapNote(2)" class="w-20 h-20 rounded-full bg-yellow-400 border-4 border-yellow-600 text-white font-extrabold text-2xl shadow-xl active:scale-95 transition-transform opacity-50 flex items-center justify-center">
+                            🟡 2
+                        </button>
+                        <button id="note-3" onclick="tapNote(3)" class="w-20 h-20 rounded-full bg-blue-400 border-4 border-blue-600 text-white font-extrabold text-2xl shadow-xl active:scale-95 transition-transform opacity-50 flex items-center justify-center">
+                            🔵 3
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            window.tapNote = (num) => {
+                if (num === noteStep + 1) {
+                    noteStep++;
+                    playSoundEffect(`note${num}`);
+                    updateProgressBar((noteStep / totalNotes) * 100);
+
+                    const currentBtn = document.getElementById(`note-${num}`);
+                    if (currentBtn) {
+                        currentBtn.classList.remove('animate-pulse-glow');
+                        currentBtn.classList.add('scale-110');
+                    }
+
+                    if (noteStep < totalNotes) {
+                        const nextBtn = document.getElementById(`note-${noteStep + 1}`);
+                        if (nextBtn) {
+                            nextBtn.classList.remove('opacity-50');
+                            nextBtn.classList.add('animate-pulse-glow');
+                        }
+                        const prompt = document.getElementById('sing-prompt');
+                        if (prompt) prompt.innerText = `Tap Note ${noteStep + 1}! 🎵`;
+                    } else {
+                        setTimeout(completeChallenge, 500);
+                    }
+                }
+            };
+        }
+
+        function setupFeedChallenge(stage) {
+            stage.innerHTML = `
+                <div class="w-full h-64 bg-purple-50 border-4 border-purple-200 rounded-2xl relative flex items-center justify-between p-6 overflow-hidden touch-none select-none">
+                    <div id="milk-bottle" class="text-7xl sm:text-8xl cursor-grab active:cursor-grabbing touch-none z-20 absolute left-6 top-1/2 -translate-y-1/2 transition-transform select-none">
+                        🍼
+                    </div>
+                    <div id="baby-mouth-target" class="w-32 h-32 sm:w-36 sm:h-36 bg-pink-100 border-4 border-dashed border-pink-400 rounded-full flex flex-col items-center justify-center text-center p-2 absolute right-6 top-1/2 -translate-y-1/2 select-none">
+                        <span class="text-5xl sm:text-6xl">👶</span>
+                        <span class="text-xs font-bold text-pink-600 mt-1">Feed Me!</span>
+                    </div>
+                </div>
+            `;
+
+            const bottle = document.getElementById('milk-bottle');
+            const target = document.getElementById('baby-mouth-target');
+
+            let isDragging = false;
+            let finished = false;
+
+            const checkFeedCollision = () => {
+                if (finished || !bottle || !target) return;
+                const bottleRect = bottle.getBoundingClientRect();
+                const targetRect = target.getBoundingClientRect();
+                const stageRect = stage.getBoundingClientRect();
+
+                const totalDist = Math.max(1, targetRect.left - stageRect.left);
+                const currentDist = bottleRect.left - stageRect.left;
+                const progress = Math.min(99, Math.max(0, (currentDist / totalDist) * 100));
+                updateProgressBar(progress);
+
+                const isOverlapping = !(
+                    bottleRect.right < targetRect.left + 15 ||
+                    bottleRect.left > targetRect.right - 15 ||
+                    bottleRect.bottom < targetRect.top + 15 ||
+                    bottleRect.top > targetRect.bottom - 15
+                );
+
+                if (isOverlapping) {
+                    finished = true;
+                    isDragging = false;
+                    playSoundEffect('slurp');
+                    updateProgressBar(100);
+                    bottle.style.transform = 'scale(1.2) rotate(-25deg)';
+                    
+                    setTimeout(completeChallenge, 500);
+                }
+            };
+
+            const moveBottleTo = (clientX, clientY) => {
+                if (finished || !bottle) return;
+                const stageRect = stage.getBoundingClientRect();
+                const x = clientX - stageRect.left - 35;
+                const y = clientY - stageRect.top - 35;
+
+                bottle.style.left = `${x}px`;
+                bottle.style.top = `${y}px`;
+                bottle.style.transform = 'none';
+
+                checkFeedCollision();
+            };
+
+            const onStart = (e) => {
+                if (finished) return;
+                isDragging = true;
+                if (bottle && e.pointerId && bottle.setPointerCapture) {
+                    try { bottle.setPointerCapture(e.pointerId); } catch(err) {}
+                }
+            };
+
+            const onEnd = () => {
+                isDragging = false;
+            };
+
+            const onMove = (e) => {
+                if (!isDragging || finished) return;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                moveBottleTo(clientX, clientY);
+            };
+
+            if (bottle) {
+                bottle.addEventListener('pointerdown', onStart);
+                bottle.addEventListener('pointerup', onEnd);
+                bottle.addEventListener('pointercancel', onEnd);
+                bottle.addEventListener('pointermove', onMove);
+
+                bottle.addEventListener('touchstart', (e) => { onStart(e); e.preventDefault(); }, { passive: false });
+                bottle.addEventListener('touchend', onEnd);
+                bottle.addEventListener('touchcancel', onEnd);
+                bottle.addEventListener('touchmove', (e) => {
+                    if (!isDragging || finished) return;
+                    if (e.touches && e.touches[0]) {
+                        moveBottleTo(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                    e.preventDefault();
+                }, { passive: false });
+            }
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        window.onload = function() {
+            initGame();
+        };
+    </script>
+</body>
+</html>
