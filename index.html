@@ -215,9 +215,8 @@
 
         let currentTargetPhrase = '';
         let currentSelectedAction = '';
-        let challengeProgress = 0;
 
-        // Audio Synth Engine Context
+        // Web Audio Synthesizer Engine
         let audioCtx = null;
 
         function initAudio() {
@@ -408,13 +407,22 @@
         }
 
         function startChallenge(action) {
-            challengeProgress = 0;
             updateProgressBar(0);
             const stage = document.getElementById('challenge-stage');
             const title = document.getElementById('challenge-title');
             const instruction = document.getElementById('challenge-instruction');
 
+            if (!stage) return;
+
+            // CLEAR ALL PREVIOUS EVENT LISTENERS ON STAGE TO PREVENT CROSS-GAME LEAKS
             stage.innerHTML = '';
+            stage.onpointerdown = null;
+            stage.onpointerup = null;
+            stage.onpointermove = null;
+            stage.onpointercancel = null;
+            stage.ontouchstart = null;
+            stage.ontouchmove = null;
+            stage.ontouchend = null;
 
             if (action === 'read a book') {
                 title.innerText = '📖 Read a Book';
@@ -443,6 +451,7 @@
             let pageIndex = 1;
             let startX = 0;
             let isSwiping = false;
+            let finished = false;
 
             const pagesData = [
                 { emoji: '🐱', title: 'The Cute Cat', text: 'The cat says Meow!', bg: 'bg-amber-100', border: 'border-amber-400' },
@@ -475,7 +484,7 @@
             const pageElement = document.getElementById('active-page');
 
             const executePageTurn = () => {
-                if (isSwiping || pageIndex > 3) return;
+                if (isSwiping || finished || pageIndex > 3) return;
                 isSwiping = true;
                 playSoundEffect('page');
 
@@ -494,6 +503,7 @@
                     updateProgressBar(progress);
 
                     if (pageIndex > 3) {
+                        finished = true;
                         const finalData = pagesData[3];
                         if (pageNumEl) pageNumEl.innerText = '3';
                         if (pageEmojiEl) pageEmojiEl.innerText = finalData.emoji;
@@ -517,8 +527,9 @@
                 }, 400);
             };
 
-            const handleStart = (x) => { startX = x; };
+            const handleStart = (x) => { if (!finished) startX = x; };
             const handleEnd = (endX) => {
+                if (finished) return;
                 const deltaX = startX - endX;
                 if (deltaX > 35) {
                     executePageTurn();
@@ -534,13 +545,14 @@
             const targetRocks = 5;
             let lastX = null;
             let direction = null;
+            let finished = false;
 
             stage.innerHTML = `
-                <div class="flex flex-col items-center justify-center w-full h-full">
-                    <div id="cradle" class="text-8xl transition-transform duration-200 cursor-grab active:cursor-grabbing transform origin-bottom">
+                <div class="flex flex-col items-center justify-center w-full h-full touch-none select-none">
+                    <div id="cradle" class="text-8xl transition-transform duration-200 cursor-grab active:cursor-grabbing transform origin-bottom select-none">
                         👶🍼
                     </div>
-                    <p class="mt-6 text-base sm:text-lg font-bold text-pink-500 bg-pink-100 px-6 py-2 rounded-full animate-pulse">
+                    <p class="mt-6 text-base sm:text-lg font-bold text-pink-500 bg-pink-100 px-6 py-2 rounded-full animate-pulse select-none">
                         👈 Move finger left and right 👉
                     </p>
                 </div>
@@ -549,14 +561,14 @@
             const cradle = document.getElementById('cradle');
 
             const handleMove = (clientX) => {
-                if (!cradle) return;
+                if (finished || !cradle) return;
                 if (lastX === null) {
                     lastX = clientX;
                     return;
                 }
 
                 const deltaX = clientX - lastX;
-                if (Math.abs(deltaX) > 20) {
+                if (Math.abs(deltaX) > 18) {
                     const newDir = deltaX > 0 ? 'right' : 'left';
                     if (direction && direction !== newDir) {
                         rocksCount++;
@@ -566,6 +578,10 @@
                         updateProgressBar((rocksCount / targetRocks) * 100);
 
                         if (rocksCount >= targetRocks) {
+                            finished = true;
+                            // Reset stage handlers immediately so late moves don't trigger anything
+                            stage.onpointermove = null;
+                            stage.ontouchmove = null;
                             setTimeout(completeChallenge, 400);
                         }
                     }
@@ -575,6 +591,11 @@
             };
 
             stage.onpointermove = (e) => handleMove(e.clientX);
+            stage.ontouchmove = (e) => {
+                if (e.touches && e.touches[0]) {
+                    handleMove(e.touches[0].clientX);
+                }
+            };
         }
 
         function setupWalkChallenge(stage) {
@@ -676,6 +697,7 @@
         function setupSingChallenge(stage) {
             let noteStep = 0;
             const totalNotes = 3;
+            let finished = false;
 
             stage.innerHTML = `
                 <div class="flex flex-col items-center justify-center gap-6">
@@ -697,6 +719,7 @@
             `;
 
             window.tapNote = (num) => {
+                if (finished) return;
                 if (num === noteStep + 1) {
                     noteStep++;
                     playSoundEffect(`note${num}`);
@@ -717,6 +740,7 @@
                         const prompt = document.getElementById('sing-prompt');
                         if (prompt) prompt.innerText = `Tap Note ${noteStep + 1}! 🎵`;
                     } else {
+                        finished = true;
                         setTimeout(completeChallenge, 500);
                     }
                 }
@@ -726,7 +750,7 @@
         function setupFeedChallenge(stage) {
             stage.innerHTML = `
                 <div class="w-full h-64 bg-purple-50 border-4 border-purple-200 rounded-2xl relative flex items-center justify-between p-6 overflow-hidden touch-none select-none">
-                    <div id="milk-bottle" class="text-7xl sm:text-8xl cursor-grab active:cursor-grabbing touch-none z-20 absolute left-6 top-1/2 -translate-y-1/2 transition-transform select-none">
+                    <div id="milk-bottle" class="text-7xl sm:text-8xl cursor-grab active:cursor-grabbing touch-none z-20 absolute left-8 top-1/2 -translate-y-1/2 transition-transform select-none">
                         🍼
                     </div>
                     <div id="baby-mouth-target" class="w-32 h-32 sm:w-36 sm:h-36 bg-pink-100 border-4 border-dashed border-pink-400 rounded-full flex flex-col items-center justify-center text-center p-2 absolute right-6 top-1/2 -translate-y-1/2 select-none">
@@ -765,7 +789,7 @@
                     isDragging = false;
                     playSoundEffect('slurp');
                     updateProgressBar(100);
-                    bottle.style.transform = 'scale(1.2) rotate(-25deg)';
+                    bottle.style.transform = 'translate(-50%, -50%) scale(1.2) rotate(-25deg)';
                     
                     setTimeout(completeChallenge, 500);
                 }
@@ -774,12 +798,12 @@
             const moveBottleTo = (clientX, clientY) => {
                 if (finished || !bottle) return;
                 const stageRect = stage.getBoundingClientRect();
-                const x = clientX - stageRect.left - 35;
-                const y = clientY - stageRect.top - 35;
+                const x = clientX - stageRect.left;
+                const y = clientY - stageRect.top;
 
                 bottle.style.left = `${x}px`;
                 bottle.style.top = `${y}px`;
-                bottle.style.transform = 'none';
+                bottle.style.transform = 'translate(-50%, -50%)';
 
                 checkFeedCollision();
             };
