@@ -1,3 +1,6 @@
+Here is the updated `index.html` file. The audio engine has been modified to check for the external `.mp3` files in `/sound` first. If an audio file successfully loads and plays, it will use that file; if the file is missing (or fails to load/play), it automatically falls back to generating the Web Audio synthesized tones and TTS speech.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,34 +66,6 @@
     </style>
 </head>
 <body class="bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 h-screen w-screen flex flex-col items-center justify-between p-4 sm:p-6 text-slate-800">
-
-    <!-- 
-    ========================================================================
-    EXPECTED GRAPHICAL ASSETS (/images):
-    - /images/baby.png          : Happy awake baby illustration
-    - /images/baby_asleep.png   : Sleeping baby image
-    - /images/baby_crying.png   : Crying baby image
-    - /images/father_walk.png   : Dad holding baby walking sprite
-    - /images/bottle.png        : Milk bottle image
-    - /images/book_page1.png    : Storybook page 1
-    - /images/book_page2.png    : Storybook page 2
-    - /images/book_page3.png    : Storybook page 3
-    
-    EXPECTED SOUND ASSETS (/sound):
-    - /sound/happy_lullaby.mp3  : Peaceful winning melody
-    - /sound/baby_cry.mp3       : Crying sound effect
-    - /sound/page_turn.mp3      : Soft paper rustle sound
-    - /sound/rock.mp3          : Gentle cradle chime
-    - /sound/step.mp3          : Footstep sound
-    - /sound/note1.mp3         : C4 musical note
-    - /sound/note2.mp3         : E4 musical note
-    - /sound/note3.mp3         : G4 musical note
-    - /sound/slurp.mp3         : Milk drinking sound
-    
-    * Note: Automatic Web Audio API synthesizers and SVG fallback graphics
-      are active so the app functions 100% standalone without external assets!
-    ========================================================================
-    -->
 
     <header class="w-full max-w-4xl flex flex-col items-center text-center z-10">
         <!-- Target Task Banner -->
@@ -213,6 +188,41 @@
             'feed the baby'
         ];
 
+        // Sound file mapping for /sound/ folder
+        const SOUND_FILES = {
+            'page': '/sound/page_turn.mp3',
+            'rock': '/sound/rock.mp3',
+            'step': '/sound/step.mp3',
+            'giggle': '/sound/rock.mp3',
+            'note1': '/sound/note1.mp3',
+            'note2': '/sound/note2.mp3',
+            'note3': '/sound/note3.mp3',
+            'slurp': '/sound/slurp.mp3',
+            'win': '/sound/happy_lullaby.mp3',
+            'cry': '/sound/baby_cry.mp3'
+        };
+
+        const audioCache = {};
+
+        // Preload sound files and track availability
+        Object.keys(SOUND_FILES).forEach(key => {
+            const audio = new Audio();
+            audio.src = SOUND_FILES[key];
+            
+            audioCache[key] = {
+                element: audio,
+                available: false
+            };
+
+            audio.addEventListener('canplaythrough', () => {
+                audioCache[key].available = true;
+            }, { once: true });
+
+            audio.addEventListener('error', () => {
+                audioCache[key].available = false;
+            });
+        });
+
         let currentTargetPhrase = '';
         let currentSelectedAction = '';
 
@@ -250,7 +260,8 @@
             }
         }
 
-        function playSoundEffect(type) {
+        // Play synthesized fallback sound
+        function playSynthesizedSound(type) {
             initAudio();
             if (type === 'page') playTone(450, 'triangle', 0.2);
             else if (type === 'rock') playTone(220, 'sine', 0.3);
@@ -267,6 +278,22 @@
             } else if (type === 'cry') {
                 playTone(350, 'sawtooth', 0.3);
                 setTimeout(() => playTone(300, 'sawtooth', 0.4), 300);
+            }
+        }
+
+        // Smart sound player: plays audio file if present, falls back to synthesizer if not
+        function playSoundEffect(type) {
+            const cachedSound = audioCache[type];
+
+            if (cachedSound && cachedSound.available) {
+                const audio = cachedSound.element;
+                audio.currentTime = 0;
+                audio.play().catch(() => {
+                    // Fallback to synth tone if browser blocks audio playback
+                    playSynthesizedSound(type);
+                });
+            } else {
+                playSynthesizedSound(type);
             }
         }
 
@@ -579,7 +606,6 @@
 
                         if (rocksCount >= targetRocks) {
                             finished = true;
-                            // Reset stage handlers immediately so late moves don't trigger anything
                             stage.onpointermove = null;
                             stage.ontouchmove = null;
                             setTimeout(completeChallenge, 400);
@@ -856,3 +882,5 @@
     </script>
 </body>
 </html>
+
+```
