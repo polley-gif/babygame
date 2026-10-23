@@ -64,6 +64,34 @@
 </head>
 <body class="bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 h-screen w-screen flex flex-col items-center justify-between p-4 sm:p-6 text-slate-800">
 
+    <!-- 
+    ========================================================================
+    EXPECTED GRAPHICAL ASSETS (/images):
+    - /images/baby.png          : Happy awake baby illustration
+    - /images/baby_asleep.png   : Sleeping baby image
+    - /images/baby_crying.png   : Crying baby image
+    - /images/father_walk.png   : Dad holding baby walking sprite
+    - /images/bottle.png        : Milk bottle image
+    - /images/book_page1.png    : Storybook page 1
+    - /images/book_page2.png    : Storybook page 2
+    - /images/book_page3.png    : Storybook page 3
+    
+    EXPECTED SOUND ASSETS (/sound):
+    - /sound/happy_lullaby.mp3  : Peaceful winning melody
+    - /sound/baby_cry.mp3       : Crying sound effect
+    - /sound/page_turn.mp3      : Soft paper rustle sound
+    - /sound/rock.mp3          : Gentle cradle chime
+    - /sound/step.mp3          : Footstep sound
+    - /sound/note1.mp3         : C4 musical note
+    - /sound/note2.mp3         : E4 musical note
+    - /sound/note3.mp3         : G4 musical note
+    - /sound/slurp.mp3         : Milk drinking sound
+    
+    * Note: Automatic Web Audio API synthesizers and SVG fallback graphics
+      are active so the app functions 100% standalone without external assets!
+    ========================================================================
+    -->
+
     <header class="w-full max-w-4xl flex flex-col items-center text-center z-10">
         <!-- Target Task Banner -->
         <div class="bg-white/90 backdrop-blur-md rounded-3xl p-4 sm:p-5 shadow-xl border-4 border-yellow-300 w-full mb-3 flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -74,7 +102,7 @@
                     <h1 id="target-phrase-text" class="text-2xl sm:text-4xl font-bold text-purple-700 tracking-wide">Loading...</h1>
                 </div>
             </div>
-            <button id="speaker-btn" onclick="speakTargetPhrase()" class="bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg">
+            <button id="speaker-btn" onclick="speakTargetPhrase()" class="bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg transition-all text-base sm:text-lg">
                 🔊 Listen
             </button>
         </div>
@@ -101,7 +129,7 @@
             </h2>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 w-full max-w-3xl">
-                <button onclick="selectAction('read a book')" class="action-btn group bg-gradient-to-r from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 text-white rounded-3xl p-4 shadow-xl border-4 border-white/30 transition-all duration-200 active:scale-95">
+                <button onclick="selectAction('read a book')" class="action-btn group bg-gradient-to-r from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 text-white rounded-3xl p-4 shadow-xl border-b-8 border-indigo-700 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 text-left">
                     <span class="text-4xl group-hover:scale-125 transition-transform">📖</span>
                     <div>
                         <span class="block text-2xl font-bold">read a book</span>
@@ -109,7 +137,7 @@
                     </div>
                 </button>
 
-                <button onclick="selectAction('rock the baby')" class="action-btn group bg-gradient-to-r from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white rounded-3xl p-4 shadow-xl border-4 border-white/30 transition-all duration-200 active:scale-95">
+                <button onclick="selectAction('rock the baby')" class="action-btn group bg-gradient-to-r from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white rounded-3xl p-4 shadow-xl border-b-8 border-rose-700 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 text-left">
                     <span class="text-4xl group-hover:scale-125 transition-transform">🌙</span>
                     <div>
                         <span class="block text-2xl font-bold">rock the baby</span>
@@ -117,7 +145,7 @@
                     </div>
                 </button>
 
-                <button onclick="selectAction('go for a walk')" class="action-btn group bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-3xl p-4 shadow-xl border-4 border-white/30 transition-all duration-200 active:scale-95">
+                <button onclick="selectAction('go for a walk')" class="action-btn group bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-3xl p-4 shadow-xl border-b-8 border-teal-700 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 text-left">
                     <span class="text-4xl group-hover:scale-125 transition-transform">🚶‍♂️</span>
                     <div>
                         <span class="block text-2xl font-bold">go for a walk</span>
@@ -125,7 +153,7 @@
                     </div>
                 </button>
 
-                <button onclick="selectAction('sing a song')" class="action-btn group bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white rounded-3xl p-4 shadow-xl border-4 border-white/30 transition-all duration-200 active:scale-95">
+                <button onclick="selectAction('sing a song')" class="action-btn group bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white rounded-3xl p-4 shadow-xl border-b-8 border-orange-700 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 text-left">
                     <span class="text-4xl group-hover:scale-125 transition-transform">🎵</span>
                     <div>
                         <span class="block text-2xl font-bold">sing a song</span>
@@ -133,7 +161,7 @@
                     </div>
                 </button>
 
-                <button onclick="selectAction('feed the baby')" class="action-btn group bg-gradient-to-r from-purple-400 to-fuchsia-500 hover:from-purple-500 hover:to-fuchsia-600 text-white rounded-3xl p-4 shadow-xl border-4 border-white/30 transition-all duration-200 active:scale-95">
+                <button onclick="selectAction('feed the baby')" class="action-btn group bg-gradient-to-r from-purple-400 to-fuchsia-500 hover:from-purple-500 hover:to-fuchsia-600 text-white rounded-3xl p-4 shadow-xl border-b-8 border-fuchsia-700 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 text-left sm:col-span-2 md:col-span-1">
                     <span class="text-4xl group-hover:scale-125 transition-transform">🍼</span>
                     <div>
                         <span class="block text-2xl font-bold">feed the baby</span>
@@ -169,7 +197,7 @@
             <h2 id="outcome-title" class="text-3xl sm:text-5xl font-extrabold mb-2">Outcome Title</h2>
             <p id="outcome-desc" class="text-xl sm:text-2xl text-slate-600 mb-8 max-w-md font-semibold">Outcome description</p>
             
-            <button onclick="resetGame()" class="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 active:scale-95 text-white text-2xl font-bold px-8 py-4 rounded-2xl shadow-lg">
+            <button onclick="resetGame()" class="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 active:scale-95 text-white text-2xl font-bold px-8 py-4 rounded-3xl shadow-xl border-b-8 border-green-800 transition-all flex items-center gap-3">
                 <span>🔄</span> Play Again!
             </button>
         </div>
@@ -184,44 +212,6 @@
             'sing a song',
             'feed the baby'
         ];
-
-        // Sound file mapping for /sound/ folder.
-        // Only the files that actually exist in the repo should be referenced here.
-        const SOUND_FILES = {
-            'page': '/sound/page_turn.mp3',
-            'rock': '/sound/page_turn.mp3',
-            'step': '/sound/page_turn.mp3',
-            'giggle': '/sound/happy_lullaby.mp3',
-            'note1': '/sound/happy_lullaby.mp3',
-            'note2': '/sound/happy_lullaby.mp3',
-            'note3': '/sound/happy_lullaby.mp3',
-            'slurp': '/sound/slurp.mp3',
-            'win': '/sound/happy_lullaby.mp3',
-            'cry': '/sound/baby_cry.mp3'
-        };
-
-        const audioCache = {};
-
-        // Preload sound files and track availability
-        Object.keys(SOUND_FILES).forEach(key => {
-            const audio = new Audio();
-            audio.src = SOUND_FILES[key];
-            audio.preload = 'auto';
-            audio.volume = 1;
-            
-            audioCache[key] = {
-                element: audio,
-                available: false
-            };
-
-            audio.addEventListener('canplaythrough', () => {
-                audioCache[key].available = true;
-            }, { once: true });
-
-            audio.addEventListener('error', () => {
-                audioCache[key].available = false;
-            }, { once: true });
-        });
 
         let currentTargetPhrase = '';
         let currentSelectedAction = '';
@@ -249,7 +239,7 @@
                 const gain = audioCtx.createGain();
                 osc.type = type;
                 osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
@@ -260,9 +250,20 @@
             }
         }
 
-        // Play synthesized fallback sound
-        function playSynthesizedSound(type) {
-            initAudio();
+        const SOUND_FILE_MAP = {
+            'page': '/sound/page_turn.mp3',
+            'rock': '/sound/rock.mp3',
+            'step': '/sound/step.mp3',
+            'giggle': '/sound/giggle.mp3',
+            'note1': '/sound/note1.mp3',
+            'note2': '/sound/note2.mp3',
+            'note3': '/sound/note3.mp3',
+            'slurp': '/sound/slurp.mp3',
+            'win': '/sound/happy_lullaby.mp3',
+            'cry': '/sound/baby_cry.mp3'
+        };
+
+        function playSynthFallback(type) {
             if (type === 'page') playTone(450, 'triangle', 0.2);
             else if (type === 'rock') playTone(220, 'sine', 0.3);
             else if (type === 'step') playTone(300, 'sine', 0.1);
@@ -281,20 +282,16 @@
             }
         }
 
-        // Smart sound player: plays audio file if present, falls back to synthesizer if not
         function playSoundEffect(type) {
             initAudio();
-            const cachedSound = audioCache[type];
-
-            if (cachedSound && cachedSound.available) {
-                const audio = cachedSound.element;
-                audio.currentTime = 0;
+            const filePath = SOUND_FILE_MAP[type];
+            if (filePath) {
+                const audio = new Audio(filePath);
                 audio.play().catch(() => {
-                    // Fallback to synth tone if browser blocks audio playback
-                    playSynthesizedSound(type);
+                    playSynthFallback(type);
                 });
             } else {
-                playSynthesizedSound(type);
+                playSynthFallback(type);
             }
         }
 
@@ -317,7 +314,7 @@
             if (!circle) return;
             
             circle.classList.remove('animate-wobble');
-            void circle.offsetWidth;
+            void circle.offsetWidth; // Reflow
             circle.classList.add('animate-wobble');
             
             playSoundEffect('giggle');
@@ -368,7 +365,7 @@
             const img = new Image();
             img.src = imgPath;
             img.alt = svgState;
-            img.className = 'w-28 h-28 sm:w-36 sm:h-36 object-contain';
+            img.className = "w-28 h-28 sm:w-36 sm:h-36 object-contain";
             
             img.onload = function() {
                 container.appendChild(img);
@@ -420,17 +417,17 @@
             if (outcomePhase) outcomePhase.classList.remove('hidden');
 
             if (isCorrect) {
-                if (titleEl) titleEl.innerText = 'Good Job! 🎉';
-                if (descEl) descEl.innerText = 'The baby is asleep!';
+                if (titleEl) titleEl.innerText = "Good Job! 🎉";
+                if (descEl) descEl.innerText = "The baby is asleep!";
                 setBabyGraphic('outcome-graphic', '/images/baby_asleep.png', 'asleep');
                 playSoundEffect('win');
-                speakText('Good job! The baby is asleep!');
+                speakText("Good job! The baby is asleep!");
             } else {
-                if (titleEl) titleEl.innerText = 'Oh no! 😢';
-                if (descEl) descEl.innerText = 'The baby is crying!';
+                if (titleEl) titleEl.innerText = "Oh no! 😢";
+                if (descEl) descEl.innerText = "The baby is crying!";
                 setBabyGraphic('outcome-graphic', '/images/baby_crying.png', 'crying');
                 playSoundEffect('cry');
-                speakText('Oh no! The baby is crying!');
+                speakText("Oh no! The baby is crying!");
             }
         }
 
@@ -442,6 +439,7 @@
 
             if (!stage) return;
 
+            // CLEAR ALL PREVIOUS EVENT LISTENERS ON STAGE TO PREVENT CROSS-GAME LEAKS
             stage.innerHTML = '';
             stage.onpointerdown = null;
             stage.onpointerup = null;
@@ -490,7 +488,7 @@
             stage.innerHTML = `
                 <div class="book-container w-full max-w-sm h-72 flex items-center justify-center relative touch-none">
                     <div id="book-spine" class="w-full h-full relative rounded-2xl shadow-2xl overflow-hidden border-8 border-amber-800 bg-amber-900 p-2 flex items-center justify-center">
-                        <div id="active-page" class="book-page w-full h-full rounded-xl ${pagesData[0].bg} border-4 ${pagesData[0].border} p-5 flex flex-col items-center justify-between text-center relative shadow-xl">
+                        <div id="active-page" class="book-page w-full h-full rounded-xl ${pagesData[0].bg} border-4 ${pagesData[0].border} p-5 flex flex-col items-center justify-between text-center relative shadow-inner">
                             <div class="w-full flex justify-between items-center text-xs font-bold text-slate-500">
                                 <span>📖 Storybook</span>
                                 <span>Page <span id="page-num">1</span>/3</span>
@@ -536,7 +534,7 @@
                         if (pageEmojiEl) pageEmojiEl.innerText = finalData.emoji;
                         if (pageTitleEl) pageTitleEl.innerText = finalData.title;
                         if (pageTextEl) pageTextEl.innerText = finalData.text;
-                        pageElement.className = `book-page w-full h-full rounded-xl ${finalData.bg} border-4 ${finalData.border} p-5 flex flex-col items-center justify-between text-center relative shadow-xl`;
+                        pageElement.className = `book-page w-full h-full rounded-xl ${finalData.bg} border-4 ${finalData.border} p-5 flex flex-col items-center justify-between text-center relative shadow-inner`;
                         pageElement.classList.remove('page-turning');
                         
                         setTimeout(completeChallenge, 700);
@@ -547,7 +545,7 @@
                         if (pageTitleEl) pageTitleEl.innerText = nextData.title;
                         if (pageTextEl) pageTextEl.innerText = nextData.text;
                         
-                        pageElement.className = `book-page w-full h-full rounded-xl ${nextData.bg} border-4 ${nextData.border} p-5 flex flex-col items-center justify-between text-center relative shadow-xl`;
+                        pageElement.className = `book-page w-full h-full rounded-xl ${nextData.bg} border-4 ${nextData.border} p-5 flex flex-col items-center justify-between text-center relative shadow-inner`;
                         pageElement.classList.remove('page-turning');
                         isSwiping = false;
                     }
@@ -606,6 +604,7 @@
 
                         if (rocksCount >= targetRocks) {
                             finished = true;
+                            // Reset stage handlers immediately so late moves don't trigger anything
                             stage.onpointermove = null;
                             stage.ontouchmove = null;
                             setTimeout(completeChallenge, 400);
@@ -731,13 +730,13 @@
                         Tap Note 1! 🎵
                     </p>
                     <div class="flex items-center gap-4">
-                        <button id="note-1" onclick="tapNote(1)" class="w-20 h-20 rounded-full bg-red-400 border-4 border-red-600 text-white font-extrabold text-2xl shadow-xl active:scale-95 transition-all duration-150">
+                        <button id="note-1" onclick="tapNote(1)" class="w-20 h-20 rounded-full bg-red-400 border-4 border-red-600 text-white font-extrabold text-2xl shadow-xl active:scale-95 transition-transform flex items-center justify-center animate-pulse-glow">
                             🔴 1
                         </button>
-                        <button id="note-2" onclick="tapNote(2)" class="w-20 h-20 rounded-full bg-yellow-400 border-4 border-yellow-600 text-white font-extrabold text-2xl shadow-xl active:scale-95 transition-all duration-150">
+                        <button id="note-2" onclick="tapNote(2)" class="w-20 h-20 rounded-full bg-yellow-400 border-4 border-yellow-600 text-white font-extrabold text-2xl shadow-xl active:scale-95 transition-transform opacity-50 flex items-center justify-center">
                             🟡 2
                         </button>
-                        <button id="note-3" onclick="tapNote(3)" class="w-20 h-20 rounded-full bg-blue-400 border-4 border-blue-600 text-white font-extrabold text-2xl shadow-xl active:scale-95 transition-all duration-150">
+                        <button id="note-3" onclick="tapNote(3)" class="w-20 h-20 rounded-full bg-blue-400 border-4 border-blue-600 text-white font-extrabold text-2xl shadow-xl active:scale-95 transition-transform opacity-50 flex items-center justify-center">
                             🔵 3
                         </button>
                     </div>
@@ -779,7 +778,7 @@
                     <div id="milk-bottle" class="text-7xl sm:text-8xl cursor-grab active:cursor-grabbing touch-none z-20 absolute left-8 top-1/2 -translate-y-1/2 transition-transform select-none">
                         🍼
                     </div>
-                    <div id="baby-mouth-target" class="w-32 h-32 sm:w-36 sm:h-36 bg-pink-100 border-4 border-dashed border-pink-400 rounded-full flex flex-col items-center justify-center text-center p-2 select-none">
+                    <div id="baby-mouth-target" class="w-32 h-32 sm:w-36 sm:h-36 bg-pink-100 border-4 border-dashed border-pink-400 rounded-full flex flex-col items-center justify-center text-center p-2 absolute right-6 top-1/2 -translate-y-1/2 select-none">
                         <span class="text-5xl sm:text-6xl">👶</span>
                         <span class="text-xs font-bold text-pink-600 mt-1">Feed Me!</span>
                     </div>
