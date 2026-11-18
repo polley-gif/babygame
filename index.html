@@ -66,26 +66,27 @@
 
     <!-- 
     ========================================================================
-    EXPECTED GRAPHICAL ASSETS (/images):
-    - /images/baby.png          : Happy awake baby illustration
-    - /images/baby_asleep.png   : Sleeping baby image
-    - /images/baby_crying.png   : Crying baby image
-    - /images/father_walk.png   : Dad holding baby walking sprite
-    - /images/bottle.png        : Milk bottle image
-    - /images/book_page1.png    : Storybook page 1
-    - /images/book_page2.png    : Storybook page 2
-    - /images/book_page3.png    : Storybook page 3
+    EXPECTED GRAPHICAL ASSETS (images/):
+    - images/baby.png          : Happy awake baby illustration
+    - images/baby_asleep.png   : Sleeping baby image
+    - images/baby_crying.png   : Crying baby image
+    - images/father_walk.png   : Dad holding baby walking sprite
+    - images/bottle.png        : Milk bottle image
+    - images/book_page1.png    : Storybook page 1
+    - images/book_page2.png    : Storybook page 2
+    - images/book_page3.png    : Storybook page 3
     
-    EXPECTED SOUND ASSETS (/sound):
-    - /sound/happy_lullaby.mp3  : Peaceful winning melody
-    - /sound/baby_cry.mp3       : Crying sound effect
-    - /sound/page_turn.mp3      : Soft paper rustle sound
-    - /sound/rock.mp3          : Gentle cradle chime
-    - /sound/step.mp3          : Footstep sound
-    - /sound/note1.mp3         : C4 musical note
-    - /sound/note2.mp3         : E4 musical note
-    - /sound/note3.mp3         : G4 musical note
-    - /sound/slurp.mp3         : Milk drinking sound
+    EXPECTED SOUND ASSETS (sound/):
+    - sound/happy_lullaby.mp3  : Peaceful winning melody
+    - sound/baby_cry.mp3       : Crying sound effect
+    - sound/page_turn.mp3      : Soft paper rustle sound
+    - sound/rock.mp3           : Gentle cradle chime
+    - sound/step.mp3           : Footstep sound
+    - sound/giggle.mp3         : Baby giggle sound
+    - sound/note1.mp3          : C4 musical note
+    - sound/note2.mp3          : E4 musical note
+    - sound/note3.mp3          : G4 musical note
+    - sound/slurp.mp3          : Milk drinking sound
     
     * Note: Automatic Web Audio API synthesizers and SVG fallback graphics
       are active so the app functions 100% standalone without external assets!
@@ -218,6 +219,7 @@
 
         // Web Audio Synthesizer Engine
         let audioCtx = null;
+        let audioUnlocked = false;
 
         function initAudio() {
             if (!audioCtx) {
@@ -229,7 +231,18 @@
             if (audioCtx && audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
+            // Unlock cached HTML5 Audio elements on first user gesture (for iOS/iPadOS Safari)
+            if (!audioUnlocked) {
+                audioUnlocked = true;
+                Object.values(AUDIO_CACHE).forEach((audio) => {
+                    audio.load();
+                });
+            }
         }
+
+        // Unlock audio on first touch/click anywhere on the page
+        document.addEventListener('pointerdown', initAudio, { once: true });
+        document.addEventListener('touchstart', initAudio, { once: true });
 
         function playTone(freq, type = 'sine', duration = 0.2) {
             try {
@@ -250,18 +263,27 @@
             }
         }
 
+        // Relative paths (no leading '/') so GitHub Pages subdirectories resolve properly
         const SOUND_FILE_MAP = {
-            'page': '/sound/page_turn.mp3',
-            'rock': '/sound/rock.mp3',
-            'step': '/sound/step.mp3',
-            'giggle': '/sound/giggle.mp3',
-            'note1': '/sound/note1.mp3',
-            'note2': '/sound/note2.mp3',
-            'note3': '/sound/note3.mp3',
-            'slurp': '/sound/slurp.mp3',
-            'win': '/sound/happy_lullaby.mp3',
-            'cry': '/sound/baby_cry.mp3'
+            'page': 'sound/page_turn.mp3',
+            'rock': 'sound/rock.mp3',
+            'step': 'sound/step.mp3',
+            'giggle': 'sound/giggle.mp3',
+            'note1': 'sound/note1.mp3',
+            'note2': 'sound/note2.mp3',
+            'note3': 'sound/note3.mp3',
+            'slurp': 'sound/slurp.mp3',
+            'win': 'sound/happy_lullaby.mp3',
+            'cry': 'sound/baby_cry.mp3'
         };
+
+        // Preload and cache Audio objects for smooth playback on iPadOS/Safari
+        const AUDIO_CACHE = {};
+        Object.entries(SOUND_FILE_MAP).forEach(([key, path]) => {
+            const audio = new Audio(path);
+            audio.preload = 'auto';
+            AUDIO_CACHE[key] = audio;
+        });
 
         function playSynthFallback(type) {
             if (type === 'page') playTone(450, 'triangle', 0.2);
@@ -284,9 +306,9 @@
 
         function playSoundEffect(type) {
             initAudio();
-            const filePath = SOUND_FILE_MAP[type];
-            if (filePath) {
-                const audio = new Audio(filePath);
+            const audio = AUDIO_CACHE[type];
+            if (audio) {
+                audio.currentTime = 0;
                 audio.play().catch(() => {
                     playSynthFallback(type);
                 });
@@ -306,6 +328,7 @@
         }
 
         function speakTargetPhrase() {
+            initAudio();
             speakText(currentTargetPhrase);
         }
 
@@ -381,7 +404,7 @@
 
             document.getElementById('target-phrase-text').innerText = `"${currentTargetPhrase}"`;
             
-            setBabyGraphic('baby-avatar-container', '/images/baby.png', 'awake');
+            setBabyGraphic('baby-avatar-container', 'images/baby.png', 'awake');
 
             document.getElementById('selection-phase').classList.remove('hidden');
             document.getElementById('challenge-phase').classList.add('hidden');
@@ -419,13 +442,13 @@
             if (isCorrect) {
                 if (titleEl) titleEl.innerText = "Good Job! 🎉";
                 if (descEl) descEl.innerText = "The baby is asleep!";
-                setBabyGraphic('outcome-graphic', '/images/baby_asleep.png', 'asleep');
+                setBabyGraphic('outcome-graphic', 'images/baby_asleep.png', 'asleep');
                 playSoundEffect('win');
                 speakText("Good job! The baby is asleep!");
             } else {
                 if (titleEl) titleEl.innerText = "Oh no! 😢";
                 if (descEl) descEl.innerText = "The baby is crying!";
-                setBabyGraphic('outcome-graphic', '/images/baby_crying.png', 'crying');
+                setBabyGraphic('outcome-graphic', 'images/baby_crying.png', 'crying');
                 playSoundEffect('cry');
                 speakText("Oh no! The baby is crying!");
             }
@@ -604,7 +627,6 @@
 
                         if (rocksCount >= targetRocks) {
                             finished = true;
-                            // Reset stage handlers immediately so late moves don't trigger anything
                             stage.onpointermove = null;
                             stage.ontouchmove = null;
                             setTimeout(completeChallenge, 400);
@@ -640,6 +662,7 @@
             const destination = document.getElementById('walk-destination');
             let isDragging = false;
             let finished = false;
+            let lastStepTime = 0;
 
             const checkWalkCollision = () => {
                 if (finished || !dad || !destination) return;
@@ -678,7 +701,14 @@
                 if (x > containerWidth) x = containerWidth;
 
                 dad.style.left = `${x}px`;
-                playSoundEffect('step');
+
+                // Throttle step sound to every 220ms so iPad Safari doesn't drop/stutter audio
+                const now = Date.now();
+                if (now - lastStepTime > 220) {
+                    lastStepTime = now;
+                    playSoundEffect('step');
+                }
+
                 checkWalkCollision();
             };
 
